@@ -1,0 +1,5 @@
+{
+  "name": "AI Teacher Assistant",
+  "description": "An application to automatically generate exams for various subjects and grades using AI, based on user-specified topics, learning objectives, and question structures.",
+  "requestFramePermissions": []
+}
