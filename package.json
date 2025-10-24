@@ -9,11 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^1.26.0",
+    "@tailwindcss/vite": "^4.1.16",
+    "docx": "8.5.0",
+    "mammoth": "^1.11.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "@google/genai": "^1.26.0",
-    "docx": "8.5.0",
-    "mammoth": "1.7.2"
+    "tailwindcss": "^4.1.16"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
