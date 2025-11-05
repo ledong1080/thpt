@@ -1,11 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Trợ Lý Giáo Viên AI</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- ✅ MathJax v3 (hiển thị công thức toán học) -->
+    <script>
+      window.MathJax = {
+        tex: {
+          packages: { "[+]": ["ams"] },
+          inlineMath: [["$", "$"], ["\\(", "\\)"]],
+          displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+        },
+        chtml: {
+          fontCache: "global",
+        },
+      };
+    </script>
+    <script
+      type="text/javascript"
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <!-- ✅ PDF.js, Mammoth, JSZip, XLSX (tùy app của bạn có dùng hay không) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+      }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="./index.css" />
 
 <link rel="stylesheet" href="/index.css">
   <script type="importmap">
@@ -13,16 +58,18 @@
   "imports": {
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.26.0",
-    "docx": "https://esm.sh/docx@8.5.0",
-    "mammoth": "https://esm.sh/mammoth@1.7.2"
+    "docx": "https://aistudiocdn.com/docx@^9.5.1",
+    "mammoth": "https://aistudiocdn.com/mammoth@^1.11.0"
   }
 }
 </script>
-  <script type="module" crossorigin src="/thpt/assets/index-BjmaVGtR.js"></script>
+  <script type="module" crossorigin src="/THPT/assets/index-CEgeO1FV.js"></script>
 </head>
-  <body class="bg-gray-100">
+
+  <body class="bg-[#CCFFFF] font-['Be_Vietnam_Pro']">
     <div id="root"></div>
-  </body>
+</body>
 </html>
+
