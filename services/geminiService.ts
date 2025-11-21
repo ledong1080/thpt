@@ -510,3 +510,38 @@ export const convertQuestionType = async (question: ParsedQuestion, newType: str
         throw new Error("AI không thể đổi dạng câu hỏi. Vui lòng thử lại.");
     }
 };
+
+export const generateQuestionFromPrompt = async (
+    promptText: string,
+    type: string,
+    subject: string,
+    grade: string,
+    apiKey: string
+): Promise<ParsedQuestion> => {
+    if (!apiKey) throw new Error("API Key is missing.");
+
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const prompt = `
+        Bạn là trợ lý AI tạo câu hỏi thi.
+        Hãy tạo 1 câu hỏi ${type === 'multiple_choice' ? 'Trắc nghiệm' : type === 'true_false' ? 'Đúng/Sai' : type === 'short_answer' ? 'Trả lời ngắn' : 'Tự luận'} 
+        cho môn ${subject}, ${grade}.
+        
+        Yêu cầu cụ thể: "${promptText}"
+        
+        Trả về kết quả dưới dạng JSON object duy nhất (không bọc trong mảng).
+        Đảm bảo tuân thủ schema, đặc biệt là các trường 'chapter', 'topic', 'level' (nếu không có thông tin cụ thể, hãy tự suy luận hợp lý nhất).
+        Sử dụng LaTeX cho toán học.
+    `;
+    
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: singleQuestionSchema,
+        },
+    });
+
+    return JSON.parse(response.text);
+}
