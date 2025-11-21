@@ -5,12 +5,13 @@ import { Packer, Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Tabl
 import EditQuestionModal from './EditQuestionModal';
 import AssignExamModal from './AssignExamModal';
 import AssignmentSuccessView from './AssignmentSuccessView';
-import { generateExplanation, generateSimilarQuestion, convertQuestionType } from '../services/geminiService';
+import { generateExplanation, generateSimilarQuestion, convertQuestionType, generateQuestionFromPrompt } from '../services/geminiService';
 import ExamMatrixView from './ExamMatrixView';
 import LatexEditModal from './LatexEditModal';
 import ChangeTypeModal from './ChangeTypeModal';
 import ShuffleExamsModal from './ShuffleExamsModal';
 import MathText from './MathText';
+import { SUBJECTS, GRADES } from '../constants';
 
 interface ExamResultViewProps {
   examData: ParsedExam;
@@ -224,11 +225,113 @@ const ExamResultView: React.FC<ExamResultViewProps> = ({ examData, onStartNew })
     const [editingLatex, setEditingLatex] = useState<ParsedQuestion | null>(null);
     const [convertingQuestion, setConvertingQuestion] = useState<ParsedQuestion | null>(null);
 
+    // State for Adding New Questions
+    const [addingSection, setAddingSection] = useState<string | null>(null);
+    const [newQuestionPrompt, setNewQuestionPrompt] = useState('');
+    const [newQuestionSubject, setNewQuestionSubject] = useState(SUBJECTS[0]);
+    const [newQuestionGrade, setNewQuestionGrade] = useState(GRADES[0]);
+    const [isCreatingQuestion, setIsCreatingQuestion] = useState(false);
 
     const multipleChoiceQuestions = currentExam.questions.filter(q => q.question_type === 'multiple_choice');
     const trueFalseQuestions = currentExam.questions.filter(q => q.question_type === 'true_false');
     const shortAnswerQuestions = currentExam.questions.filter(q => q.question_type === 'short_answer');
     const essayQuestions = currentExam.questions.filter(q => q.question_type === 'essay');
+
+    const handleCreateQuestion = async (type: string) => {
+        const apiKey = localStorage.getItem('geminiApiKey');
+        if (!apiKey) {
+             alert("Vui lòng cấu hình API Key trong mục Cấu hình Hệ thống.");
+             return;
+        }
+        
+        setIsCreatingQuestion(true);
+        try {
+            const newQ = await generateQuestionFromPrompt(newQuestionPrompt, type, newQuestionSubject, newQuestionGrade, apiKey);
+            newQ.id = `q_added_${Date.now()}`;
+            
+            setCurrentExam(prev => ({
+                ...prev,
+                questions: [...prev.questions, newQ]
+            }));
+            setAddingSection(null);
+            setNewQuestionPrompt('');
+        } catch (error: any) {
+            alert("Lỗi tạo câu hỏi: " + error.message);
+        } finally {
+            setIsCreatingQuestion(false);
+        }
+    }
+
+    const renderAddQuestionSection = (sectionType: string) => {
+        const isActive = addingSection === sectionType;
+    
+        if (!isActive) {
+            return (
+                <button 
+                    onClick={() => {
+                        setAddingSection(sectionType);
+                        setNewQuestionPrompt('');
+                    }}
+                    className="w-full mt-4 py-3 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 font-semibold hover:bg-blue-50 hover:border-blue-500 transition-all flex items-center justify-center gap-2"
+                >
+                    <PlusIcon className="w-5 h-5" />
+                    Thêm câu hỏi vào phần này
+                </button>
+            );
+        }
+    
+        return (
+            <div className="mt-4 bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-inner animate-in fade-in slide-in-from-top-2">
+                 <label className="block text-sm font-semibold text-gray-700 mb-2 text-center">
+                    Nhập yêu cầu câu hỏi (Nội dung, mức độ...):
+                </label>
+                <textarea
+                    value={newQuestionPrompt}
+                    onChange={(e) => setNewQuestionPrompt(e.target.value)}
+                    placeholder="Ví dụ: Một câu hỏi vận dụng về phương trình bậc 2..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
+                    rows={2}
+                    autoFocus
+                />
+                <div className="flex flex-wrap items-center gap-4 justify-between">
+                    <div className="flex items-center gap-3">
+                        <select 
+                            value={newQuestionSubject} 
+                            onChange={(e) => setNewQuestionSubject(e.target.value)}
+                            className="p-2 border border-gray-300 rounded-md text-sm bg-white"
+                        >
+                            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <select 
+                            value={newQuestionGrade} 
+                            onChange={(e) => setNewQuestionGrade(e.target.value)}
+                            className="p-2 border border-gray-300 rounded-md text-sm bg-white"
+                        >
+                            {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => setAddingSection(null)}
+                            className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                            disabled={isCreatingQuestion}
+                        >
+                            Hủy
+                        </button>
+                        <button 
+                            onClick={() => handleCreateQuestion(sectionType)}
+                            disabled={!newQuestionPrompt.trim() || isCreatingQuestion}
+                            className="px-4 py-2 text-sm font-bold text-white bg-green-600 rounded-md hover:bg-green-700 shadow-md transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {isCreatingQuestion ? <span className="animate-spin">↻</span> : null}
+                            Tạo câu hỏi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
 
     const handleAssignExam = async (config: any) => {
         console.log("Assigning exam with config:", config);
@@ -281,9 +384,13 @@ const ExamResultView: React.FC<ExamResultViewProps> = ({ examData, onStartNew })
             const gistData = await response.json();
             const gistId = gistData.id;
             
-            // The URL for the online exam page, with the Gist ID in the hash
-            const baseUrl = 'https://ledong1080.github.io/thpt/online/index.html';
-            const link = `${baseUrl}#${gistId}`;
+            // A more robust way to create the link.
+            // It uses the current page's URL and just replaces the search parameters.
+            // This avoids issues with hardcoded paths like '/index.html' and blob URLs.
+            const url = new URL(window.location.href);
+            url.search = `?examId=${gistId}`;
+            url.hash = ''; // Clear any existing hash
+            const link = url.toString();
             
             setAssignmentCode(code);
             setAssignmentLink(link);
@@ -1422,6 +1529,7 @@ const ExamResultView: React.FC<ExamResultViewProps> = ({ examData, onStartNew })
                                 <div className="space-y-4">
                                     {multipleChoiceQuestions.map(q => renderQuestion(q, ++questionCounter))}
                                 </div>
+                                {renderAddQuestionSection('multiple_choice')}
                             </div>
                         )}
                          {trueFalseQuestions.length > 0 && (
@@ -1430,6 +1538,7 @@ const ExamResultView: React.FC<ExamResultViewProps> = ({ examData, onStartNew })
                                 <div className="space-y-4">
                                     {trueFalseQuestions.map(q => renderQuestion(q, ++questionCounter))}
                                 </div>
+                                {renderAddQuestionSection('true_false')}
                             </div>
                         )}
                         {shortAnswerQuestions.length > 0 && (
@@ -1438,6 +1547,7 @@ const ExamResultView: React.FC<ExamResultViewProps> = ({ examData, onStartNew })
                                 <div className="space-y-4">
                                     {shortAnswerQuestions.map(q => renderQuestion(q, ++questionCounter))}
                                 </div>
+                                {renderAddQuestionSection('short_answer')}
                             </div>
                         )}
                         {essayQuestions.length > 0 && (
@@ -1446,6 +1556,7 @@ const ExamResultView: React.FC<ExamResultViewProps> = ({ examData, onStartNew })
                                 <div className="space-y-4">
                                     {essayQuestions.map(q => renderQuestion(q, ++questionCounter))}
                                 </div>
+                                {renderAddQuestionSection('essay')}
                             </div>
                         )}
                     </div>
